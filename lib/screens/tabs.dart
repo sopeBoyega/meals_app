@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:meals_app/models/meal.dart';
 import 'package:meals_app/screens/categories.dart';
 import 'package:meals_app/screens/meals.dart';
 
@@ -10,41 +11,72 @@ class TabsScreen extends StatefulWidget {
 }
 
 class _TabsScreenState extends State<TabsScreen> {
-    int _selectedPageIndex = 0;
+  int _selectedPageIndex = 0;
 
-    void _selectPage(int index) {
+  final List<Meal> _favoriteMeals = [];
+
+  void _showInfoMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text((message)), duration: Duration(seconds: 3)),
+    );
+  }
+
+  // Functions that adds or removes a meal from the favotites list
+  // The function is needed in the Meal_details.dart screen but has to be drilled down to the widget
+  //Because of the tabsScreen is the widget that needs the data from _favoriteMeals variable.
+
+  void _toggleMealFavoriteStatus(Meal meal) {
+    final isExisting = _favoriteMeals.contains(meal);
+
+    if (isExisting) {
       setState(() {
-        _selectedPageIndex = index;
+        _favoriteMeals.remove(meal);
+        _showInfoMessage("Meal is no longer a favorite");
       });
+    } else {
+      setState(() {
+        _favoriteMeals.add(meal);
+      });
+      _showInfoMessage("Meal is now a favorite");
     }
- 
+  }
+
+  void _selectPage(int index) {
+    setState(() {
+      _selectedPageIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-   Widget activePage = const CategoriesScreen();
-   var activePageTitle = "Categories";
+    Widget activePage = CategoriesScreen(
+      onToggleFavorite: _toggleMealFavoriteStatus,
+    );
+    var activePageTitle = "Categories";
 
+    if (_selectedPageIndex == 1) {
+      activePage = MealsScreen(
+        meals: _favoriteMeals,
+        onToggleFavorite: _toggleMealFavoriteStatus,
+      );
+      activePageTitle = 'Your Favorites';
+    }
 
-
-   if (_selectedPageIndex == 1) {
-    activePage = MealsScreen(title: "Favorites", meals: []);
-    activePageTitle = 'Your Favorites';
-   }
- 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(activePageTitle),
-
-      ),
+      appBar: AppBar(title: Text(activePageTitle)),
       body: activePage,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedPageIndex,
         onTap: (index) {
-        _selectPage(index);
+          _selectPage(index);
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.set_meal), label: "Categories"),
-          BottomNavigationBarItem(icon: Icon(Icons.star),label: "Favourites" ),
-
+          BottomNavigationBarItem(
+            icon: Icon(Icons.set_meal),
+            label: "Categories",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.star), label: "Favourites"),
         ],
       ),
     );
